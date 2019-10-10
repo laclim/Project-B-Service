@@ -63,8 +63,8 @@ function getAccessTokenAfterPassport(username, password) {
         // data: qs.stringify(data),
         url: "http://localhost:3000/login",
         auth: {
-            username: "dev",
-            password: "dev"
+            username: config_1.default.get("CLIENT_ID"),
+            password: config_1.default.get("CLIENT_SECRET")
         },
         data: querystring_1.stringify({
             username: username,
