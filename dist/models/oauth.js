@@ -20,6 +20,7 @@ const OAuthTokensSchema = new mongoose_1.Schema({
 const OAuthClientsSchema = new mongoose_1.Schema({
     clientId: { type: String },
     clientSecret: { type: String },
+    type: { type: String, enum: ["USER", "OPS", "DEV"] },
     grants: { type: String },
     redirectUris: { type: Array }
 });
@@ -27,6 +28,7 @@ const OAuthUsersSchema = new mongoose_1.Schema({
     email: { type: String },
     firstname: { type: String },
     lastname: { type: String },
+    userProfId: { type: String },
     password: { type: String },
     username: { type: String },
     facebook: new mongoose_1.Schema({
@@ -127,4 +129,16 @@ function verifyScope(accesToken, scope) {
     });
 }
 exports.verifyScope = verifyScope;
+function revokeToken(token) {
+    return new Promise((resolve, reject) => {
+        OAuthTokensModel.deleteOne({ refreshToken: token.refreshToken })
+            .then(refreshToken => {
+            resolve(refreshToken);
+        })
+            .catch(err => {
+            reject(err);
+        });
+    });
+}
+exports.revokeToken = revokeToken;
 //# sourceMappingURL=oauth.js.map

@@ -5,8 +5,11 @@ export function sendResponse(
   message: string,
   error: any
 ) {
-  res.status(error !== null ? (error !== null ? 400 : 200) : 400).json({
-    message: message,
-    error: error
-  });
+  res
+    .status(error !== null ? (error !== null ? 400 : 200) : 400)
+    .json({
+      message: message,
+      error: error
+    })
+    .end();
 }

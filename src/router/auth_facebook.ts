@@ -11,35 +11,46 @@ import { AxiosRequestConfig } from "axios";
 import cryptoRandomString from "crypto-random-string";
 import { OAuthUsersModel, IOAuthUsersSchema } from "../models/oauth";
 import { stringify } from "querystring";
+import { UserProfileModel } from "../models/account";
 
 passport.use(
   new Strategy(
     {
-      clientID: config.get("CLIENT_ID"),
-      clientSecret: config.get("CLIENT_SECRET"),
+      clientID: config.get("FACEBOOK_CLIENT_ID"),
+      clientSecret: config.get("FACEBOOK_CLIENT_SECRET"),
       callbackURL: "http://localhost:3000/auth/facebook/callback",
       profileFields: ["emails"]
     },
-    function(accessToken, refreshToken, profile, cb) {
-      OAuthUsersModel.findOneAndUpdate(
-        { "facebook.facebookId": profile.id },
-        {
-          username: cryptoRandomString({ length: 15 }),
-          password: cryptoRandomString({ length: 15 }),
-          email: profile.emails[0].value,
-          facebook: {
-            facebookId: profile.id,
+    async function(accessToken, refreshToken, profile, cb) {
+      try {
+        const user = await OAuthUsersModel.findOne({
+          "facebook.facebookId": profile.id
+        });
+
+        if (!user) {
+          const userProfile = await UserProfileModel.create({ gender: "MALE" });
+
+          const result = await OAuthUsersModel.create({
+            username: cryptoRandomString({ length: 15 }),
+            password: cryptoRandomString({ length: 15 }),
             email: profile.emails[0].value,
-            displayName: profile.displayName,
-            accessToken: accessToken
-          }
-        },
-        { upsert: true },
-        (err, value) => {
-          if (err) return cb(err);
-          return cb(null, value);
+            facebook: {
+              facebookId: profile.id,
+              email: profile.emails[0].value,
+              displayName: profile.displayName,
+              accessToken: accessToken
+            },
+            userProfId: userProfile._id
+          });
+          return cb(null, result);
+        } else {
+          return cb(null, user);
         }
-      );
+      } catch (error) {
+        return cb(error);
+      }
+
+      // await UserProfileModel.findOneAndUpdate({_id:OAuthUsersModel.f});
     }
   )
 );
@@ -90,8 +101,7 @@ function getAccessTokenAfterPassport(username: string, password: string) {
     },
     data: stringify({
       username: username,
-      password: password,
-      grant_type: "password"
+      password: password
     })
   };
   return new Promise((resolve, reject) =>
@@ -104,25 +114,25 @@ function getAccessTokenAfterPassport(username: string, password: string) {
       })
   );
 }
-auth_facebook.get("/success", function(req, res) {
-  const options: AxiosRequestConfig = {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    auth: {
-      username: config.get("CLIENT_ID"),
-      password: config.get("CLIENT_SECRET")
-    },
+// auth_facebook.get("/success", function(req, res) {
+//   const options: AxiosRequestConfig = {
+//     method: "POST",
+//     headers: { "content-type": "application/x-www-form-urlencoded" },
+//     auth: {
+//       username: config.get("CLIENT_ID"),
+//       password: config.get("CLIENT_SECRET")
+//     },
 
-    // data: qs.stringify(data),
-    url: "http://localhost:3000/login"
-  };
-  axios(options)
-    .then(response => {
-      res.json(response.data);
-    })
-    .catch(err => {
-      res.json(err);
-    });
-});
+//     // data: qs.stringify(data),
+//     url: "http://localhost:3000/login"
+//   };
+//   axios(options)
+//     .then(response => {
+//       res.json(response.data);
+//     })
+//     .catch(err => {
+//       res.json(err);
+//     });
+// });
 
 export default auth_facebook;

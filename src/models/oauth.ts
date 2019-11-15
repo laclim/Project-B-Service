@@ -27,6 +27,7 @@ const OAuthTokensSchema = new Schema({
 const OAuthClientsSchema = new Schema({
   clientId: { type: String },
   clientSecret: { type: String },
+  type: { type: String, enum: ["USER", "OPS", "DEV"] },
   grants: { type: String },
   redirectUris: { type: Array }
 });
@@ -36,6 +37,7 @@ const OAuthUsersSchema = new Schema(
     email: { type: String },
     firstname: { type: String },
     lastname: { type: String },
+    userProfId: { type: String },
     password: { type: String },
     username: { type: String },
     facebook: new Schema(
@@ -72,6 +74,7 @@ interface IOAuthTokensSchema extends Document {
 interface IOAuthClientsSchema extends Document {
   clientId: string;
   clientSecret: string;
+  type: "USER" | "OPS" | "DEV";
   grants: string;
   redirectUris: Array<string>;
 
@@ -82,6 +85,7 @@ export interface IOAuthUsersSchema extends Document {
   email: string;
   firstname: string;
   lastname: string;
+  userProfId: string;
   password: string;
   username: string;
   facebook: {
@@ -253,6 +257,18 @@ function verifyScope(
   });
 }
 
+function revokeToken(token: IOAuthTokensSchema) {
+  return new Promise((resolve, reject) => {
+    OAuthTokensModel.deleteOne({ refreshToken: token.refreshToken })
+      .then(refreshToken => {
+        resolve(refreshToken);
+      })
+      .catch(err => {
+        reject(err);
+      });
+  });
+}
+
 export {
   getAccessToken,
   getClient,
@@ -260,5 +276,6 @@ export {
   getUser,
   saveToken,
   grantTypeAllowed,
-  verifyScope
+  verifyScope,
+  revokeToken
 };

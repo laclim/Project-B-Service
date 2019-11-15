@@ -12,6 +12,7 @@ const config_1 = __importDefault(require("config"));
 const body_parser_1 = __importDefault(require("body-parser"));
 // config logger
 const passport_1 = __importDefault(require("passport"));
+const cors_1 = __importDefault(require("cors"));
 const app = express_1.default();
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
@@ -19,6 +20,7 @@ app.use(body_parser_1.default.urlencoded({ extended: false }));
 app.use(body_parser_1.default.json());
 app.use(logger_1.logger);
 app.use("/", router_1.default);
+app.use(cors_1.default());
 app.use(logger_1.errorLogger);
 const PORT = config_1.default.get("PORT");
 app.listen(PORT, () => {
