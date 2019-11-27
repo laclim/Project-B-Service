@@ -1,9 +1,6 @@
 import { connect, connection } from "mongoose";
-import config from "config";
-connect(
-  config.get("MONGO_URL"),
-  { useUnifiedTopology: true }
-);
+
+connect(process.env.MONGO_URL, { useUnifiedTopology: true });
 
 connection.on("connected", function() {
   console.log("Mongo Connected");

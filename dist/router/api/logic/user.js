@@ -31,5 +31,8 @@ user.put("/user/:id", [
         res.status(400).json(error);
     }
 }));
+user.get("/user/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.json({ message: "Hello" });
+}));
 exports.default = user;
 //# sourceMappingURL=user.js.map

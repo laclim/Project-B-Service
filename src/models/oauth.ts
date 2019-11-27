@@ -5,9 +5,7 @@
 import { Schema, model, Model, Document } from "mongoose";
 import { SchemaTimestampsConfig } from "mongoose";
 import {} from "oauth2-server";
-import { rejects } from "assert";
 import { Profile } from "passport-facebook";
-import config from "config";
 
 /**
  * Schema definitions.

@@ -1,8 +1,6 @@
 import express, { response } from "express";
 import { Strategy } from "passport-facebook";
 import passport from "passport";
-import config from "config";
-// import Account, { IAccount } from "../models/account";
 import { sendResponse } from "./utility";
 var auth_facebook = express.Router();
 import { authenticateHandler, authoriseHandler } from "./oauth";
@@ -12,12 +10,13 @@ import cryptoRandomString from "crypto-random-string";
 import { OAuthUsersModel, IOAuthUsersSchema } from "../models/oauth";
 import { stringify } from "querystring";
 import { UserProfileModel } from "../models/account";
+import cookieParser from "cookie-parser";
 
 passport.use(
   new Strategy(
     {
-      clientID: config.get("FACEBOOK_CLIENT_ID"),
-      clientSecret: config.get("FACEBOOK_CLIENT_SECRET"),
+      clientID: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
       callbackURL: "http://localhost:3000/auth/facebook/callback",
       profileFields: ["emails"]
     },
@@ -54,6 +53,13 @@ passport.use(
     }
   )
 );
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(user, done) {
+  done(null, user);
+});
 
 auth_facebook.get(
   "/",
@@ -65,6 +71,7 @@ auth_facebook.get(
 auth_facebook.get(
   "/callback",
   passport.authenticate("facebook", {
+    // successRedirect: "http://localhost:8000/",
     failureRedirect: "/login",
     session: false
   }),
@@ -79,13 +86,17 @@ auth_facebook.get(
           const username = value.username;
           const password = value.password;
           getAccessTokenAfterPassport(username, password)
-            .then(response => res.json(response))
+            .then((response: any) => {
+              res.cookie("aT", response.accessToken);
+              res.cookie("rT", response.refreshToken);
+            })
+            .then((response: any) => {
+              res.redirect("http://localhost:8000/");
+            })
             .catch(errResponse => res.json(errResponse));
         }
       }
     );
-
-    // res.redirect("/");
   }
 );
 
@@ -96,8 +107,8 @@ function getAccessTokenAfterPassport(username: string, password: string) {
     // data: qs.stringify(data),
     url: "http://localhost:3000/login",
     auth: {
-      username: config.get("CLIENT_ID"),
-      password: config.get("CLIENT_SECRET")
+      username: process.env.CLIENT_ID,
+      password: process.env.CLIENT_SECRET
     },
     data: stringify({
       username: username,

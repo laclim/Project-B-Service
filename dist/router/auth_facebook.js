@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const passport_facebook_1 = require("passport-facebook");
 const passport_1 = __importDefault(require("passport"));
-const config_1 = __importDefault(require("config"));
 var auth_facebook = express_1.default.Router();
 const axios_1 = __importDefault(require("axios"));
 const crypto_random_string_1 = __importDefault(require("crypto-random-string"));
@@ -23,8 +22,8 @@ const oauth_1 = require("../models/oauth");
 const querystring_1 = require("querystring");
 const account_1 = require("../models/account");
 passport_1.default.use(new passport_facebook_1.Strategy({
-    clientID: config_1.default.get("FACEBOOK_CLIENT_ID"),
-    clientSecret: config_1.default.get("FACEBOOK_CLIENT_SECRET"),
+    clientID: process.env.FACEBOOK_CLIENT_ID,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/facebook/callback",
     profileFields: ["emails"]
 }, function (accessToken, refreshToken, profile, cb) {
@@ -59,10 +58,17 @@ passport_1.default.use(new passport_facebook_1.Strategy({
         // await UserProfileModel.findOneAndUpdate({_id:OAuthUsersModel.f});
     });
 }));
+passport_1.default.serializeUser(function (user, done) {
+    done(null, user);
+});
+passport_1.default.deserializeUser(function (user, done) {
+    done(null, user);
+});
 auth_facebook.get("/", passport_1.default.authenticate("facebook", {
     scope: ["email", "user_friends"]
 }));
 auth_facebook.get("/callback", passport_1.default.authenticate("facebook", {
+    // successRedirect: "http://localhost:8000/",
     failureRedirect: "/login",
     session: false
 }), function (req, res) {
@@ -75,11 +81,16 @@ auth_facebook.get("/callback", passport_1.default.authenticate("facebook", {
             const username = value.username;
             const password = value.password;
             getAccessTokenAfterPassport(username, password)
-                .then(response => res.json(response))
+                .then((response) => {
+                res.cookie("aT", response.accessToken);
+                res.cookie("rT", response.refreshToken);
+            })
+                .then((response) => {
+                res.redirect("http://localhost:8000/");
+            })
                 .catch(errResponse => res.json(errResponse));
         }
     });
-    // res.redirect("/");
 });
 function getAccessTokenAfterPassport(username, password) {
     const options = {
@@ -88,8 +99,8 @@ function getAccessTokenAfterPassport(username, password) {
         // data: qs.stringify(data),
         url: "http://localhost:3000/login",
         auth: {
-            username: config_1.default.get("CLIENT_ID"),
-            password: config_1.default.get("CLIENT_SECRET")
+            username: process.env.CLIENT_ID,
+            password: process.env.CLIENT_SECRET
         },
         data: querystring_1.stringify({
             username: username,

@@ -27,7 +27,7 @@ const oauth_1 = require("../models/oauth");
 const express_1 = __importDefault(require("express"));
 var oauth = new oauth2_server_1.default({
     model: oAuthModel,
-    refreshTokenLifetime: 60 * 60 * 24 * 30
+    refreshTokenLifetime: Number(process.env.REFRESH_TOKEN_EXPIRE)
 });
 function authenticateHandler(options) {
     return function (req, res, next) {
@@ -36,13 +36,19 @@ function authenticateHandler(options) {
         return oauth
             .authenticate(request, response, options)
             .then(function (token) {
-            res.locals.oauth = { token: token };
-            req.headers.userId = token.userId;
+            req.session.accessToken = token.accessToken;
+            req.session.refreshToken = token.refreshToken;
             next();
         })
             .catch(function (err) {
-            if (err.message == "Invalid token: access token has expired")
-                res.status(401).json({ message: "token expired" });
+            if (err.status != 200) {
+                // req.session.destroy(sessionError => {
+                //   if (sessionError) {
+                //     res.status(400).json({ message: sessionError });
+                //   }
+                // });
+                res.status(401).json({ message: err.message });
+            }
             else
                 res.status(401).json(err);
         });
@@ -75,7 +81,7 @@ function authoriseHandler(options) {
                 }
             }
             catch (error) {
-                res.status(403).json({ message: "Invalid client" });
+                res.status(403).json({ error });
             }
         });
     };
@@ -84,6 +90,30 @@ exports.authoriseHandler = authoriseHandler;
 var login = express_1.default.Router();
 login.post("/login", authoriseHandler({ grant_type: "password" }));
 login.post("/refresh", authoriseHandler({ grant_type: "refresh_token" }));
+login.get("/user", authenticateHandler({}), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.session) {
+        res.status(400).json({ message: "no user" });
+    }
+    res.json({ message: req.session.user_id });
+}));
+login.delete("/logout", authenticateHandler({}), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const accessToken = req.headers.authorization.split(" ")[1];
+    try {
+        const deleteToken = yield oauth_1.OAuthTokensModel.deleteOne({
+            accessToken: accessToken
+        });
+        // req.session.destroy(err => {
+        //   if (err) res.status(400).json({ message: "destroy session failed" });
+        res.json({
+            message: "revoke token successful",
+            count: deleteToken.deletedCount
+        });
+        // });
+    }
+    catch (error) {
+        res.status(400).json({ message: "not id found" });
+    }
+}));
 login.use("/api", authenticateHandler({}), api_1.default);
 exports.default = login;
 //# sourceMappingURL=oauth.js.map
