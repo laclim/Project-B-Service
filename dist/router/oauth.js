@@ -73,7 +73,7 @@ function authoriseHandler(options) {
                         next();
                     })
                         .catch(function (err) {
-                        res.status(500).json(err);
+                        res.status(401).json(err);
                     });
                 }
                 else {
