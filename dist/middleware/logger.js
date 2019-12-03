@@ -11,7 +11,7 @@ const winstonExpress = __importStar(require("express-winston"));
 var MongoDB = require("winston-mongodb").MongoDB;
 const logTransportList = [
     new MongoDB({
-        db: "mongodb://localhost:27017/logger",
+        db: process.env.LOGGER_URL,
         collection: "api-log",
         handleExceptions: true,
         level: "info",
