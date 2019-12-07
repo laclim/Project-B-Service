@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon -r dotenv/config src/server.ts",
-    "prod": "set NODE_ENV=production&&nodemon src/server.ts"
+    "prod": "node  -r dotenv/config dist/server.js"
   },
   "author": "",
   "license": "ISC",
