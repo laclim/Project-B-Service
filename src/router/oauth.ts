@@ -53,22 +53,23 @@ export function authoriseHandler(options: any) {
       ).toString();
       const clientId = basic.split(":")[0];
       const client = await OAuthClientsModel.findOne({ clientId: clientId });
-
-      if (client.type == "USER") {
-        return oauth
-          .token(request, response, options)
-          .then(response => {
-            res.status(200).json(response);
-            next();
-          })
-          .catch(function(err) {
-            res.status(401).json(err);
-          });
+      if (client) {
+        if (client.type == "USER") {
+          return oauth
+            .token(request, response, options)
+            .then(response => {
+              res.status(200).json(response);
+              next();
+            })
+            .catch(function(err) {
+              res.status(401).json(err);
+            });
+        }
       } else {
         res.status(403).json({ message: "You are not user" });
       }
     } catch (error) {
-      res.status(403).json({ error });
+      res.status(403).json({ message: error.message });
     }
   };
 }
